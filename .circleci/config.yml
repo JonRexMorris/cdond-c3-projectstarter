@@ -84,8 +84,8 @@ jobs:
           keys: [frontend-build]
       - run:
           name: Test front-end
+          working_directory: ./frontend
           command: |
-            cd frontend
             npm run test
                 
   test-backend:
@@ -97,9 +97,9 @@ jobs:
           keys: [backend-build]
       - run:
           name: Test back-end
+          working_directory: ./backend
           command: |
-            cd backend
-            npm run build
+            npm run test
 
 workflows:
   default:
