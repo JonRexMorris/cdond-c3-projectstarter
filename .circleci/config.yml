@@ -43,13 +43,13 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
+      - run: return 1
       - run:
           name: Build front-end
           command: |
             cd frontend
             npm i
             npm run build
-      - run: return 1
       - slack/notify:
           event: fail
           template: basic_fail_1
@@ -64,6 +64,7 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - run: return 1
       - run:
           name: Build back-end
           command: |
@@ -133,6 +134,7 @@ workflows:
   default:
     jobs:
       - build-frontend
+          context: slack
       - build-backend
       - test-frontend:
           requires: [build-frontend]
