@@ -63,6 +63,11 @@ jobs:
             cd backend
             npm i
             npm run build
+      - run:
+          name: Start database
+          command: |
+            cd util
+            docker-compose up
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
