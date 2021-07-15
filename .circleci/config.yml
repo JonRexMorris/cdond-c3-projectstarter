@@ -40,14 +40,13 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
+      - run: cd frontend
       - run:
           name: Install front-end dependencies
-          working_directory: ./frontend
           command: |
             npm i
       - run:
           name: Build front-end
-          working_directory: ./frontend
           command: |
             npm run build
       - save_cache:
@@ -61,14 +60,13 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - run: cd backend
       - run:
           name: Install back-end dependencies
-          working_directory: ./backend
           command: |
             npm i
       - run:
           name: Build back-end
-          working_directory: ./backend
           command: |
             npm run build
       - save_cache:
@@ -82,9 +80,9 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
+      - run: cd frontend
       - run:
           name: Test front-end
-          working_directory: ./frontend
           command: |
             npm run test
                 
@@ -95,9 +93,9 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+      - run: cd backend
       - run:
           name: Test back-end
-          working_directory: ./backend
           command: |
             npm run test
 
