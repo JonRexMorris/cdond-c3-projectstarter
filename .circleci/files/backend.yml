@@ -37,6 +37,6 @@ Resources:
 Outputs:
   BackendURL:
     Description: The hostname of the Backend EC2 instance
-    Value: !GetAtt EC2Instance.PublicDnsName       
+    Value: !GetAtt EC2Instance.PublicIp       
     Export:
       Name: !Sub udapeople-backend-${ID}
