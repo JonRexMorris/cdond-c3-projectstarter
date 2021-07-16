@@ -166,6 +166,9 @@ jobs:
   configure-infrastructure:
     docker:
       - image: python:3.10.0b3-alpine3.14
+    shell: /bin/sh -leo pipefail
+    environment:
+      - BASH_ENV: /etc/profile
     steps:
       - checkout
       - add_ssh_keys:
@@ -173,13 +176,18 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
+          name: Setup Environemnt Variable
+          command: |
+            echo 'export IP_ADR=${tail -n 1 .circleci/ansible/inventory.txt}' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
           name: Add OpenSSH
           command: |
             apk update && apk add openssh
       - run:
           name: Add key to known hosts
           command: |
-            ssh-keyscan ${tail -n 1 .circleci/ansible/inventory.txt} >> ~/.ssh/known_hosts
+            ssh-keyscan ${IP_ADR} >> ~/.ssh/known_hosts
       - run:
           name: Install dependencies
           command: |
