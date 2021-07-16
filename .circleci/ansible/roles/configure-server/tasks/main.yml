@@ -18,35 +18,3 @@
     global: yes
     production: yes
     state: present
-
-- name: "configure environment variables"
-  become: true
-  environment:
-    ENVIRONMENT: production
-    TYPEORM_CONNECTION: postgres
-    TYPEORM_ENTITIES: ./src/modules/domain/**/*.entity.ts
-    TYPEORM_HOST: udacity-prod.c9flabl2q4vu.us-west-2.rds.amazonaws.com
-    TYPEORM_PORT: 5432
-    TYPEORM_USERNAME: postgres
-    TYPEORM_PASSWORD: udacity123
-    TYPEORM_DATABASE: udacity-prod
-
-- name: "create server file"
-  become: true
-  copy:
-    dest: ~/server.js
-    content: |
-      var http = require('http');
-      var server = http.createServer(function (request, response) {
-      response.writeHead(200, {"Content-Type": "text/plain"});
-      response.end("Hello World\n");
-      });
-      server.listen(80);
-      console.log("Server running at http://127.0.0.1:80/");
-
-- name: "start server"
-  become: true
-  pm2:
-    name: server
-    script: ~/server.js
-    state: started
