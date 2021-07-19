@@ -157,6 +157,14 @@ jobs:
             --query "Exports[?Name==\`udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}\`].Value" \
             --no-paginate \
             --output text >> .circleci/ansible/inventory.txt
+      - run:
+          name: Persist backend ip to memstash
+          command: |
+            BACKEND_IP=aws cloudformation list-exports \
+            --query "Exports[?Name==\`udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}\`].Value" \
+            --no-paginate \
+            --output text
+            curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/backendip
       - persist_to_workspace:
           root: ~/
           paths:
@@ -210,10 +218,58 @@ jobs:
           command: |
             if grep -q "has been executed successfully." backend/migrations.txt
             then
-              curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "1" https://api.memstash.io/values/migration-$${CIRCLE_WORKFLOW_ID:0:7}
+              curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "1" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID:0:7}
             else
-              curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "0" https://api.memstash.io/values/migration-$${CIRCLE_WORKFLOW_ID:0:7}
+              curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "0" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID:0:7}
             fi
+      # Here's where you will add some code to rollback on failure
+
+  deploy-frontend:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend
+            npm i
+      - run:
+          name: Get backend url
+          command: |
+            BACKEND_IP=curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/backendip
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm run build
+            cd dist
+            aws s3 sync . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
+      # Here's where you will add some code to rollback on failure
+
+  deploy-backend:
+    docker:
+      - image: python:3.10.0b3-alpine3.14
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["d6:1b:b8:58:ee:ff:9d:d6:ab:17:a5:3b:d3:21:a3:93"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm i
+            npm run build
+            cd ~/.circleci/ansible
+            ansible-playbook -i inventory.txt deploy-backend.yml
       # Here's where you will add some code to rollback on failure
 
 workflows:
@@ -236,3 +292,7 @@ workflows:
           requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]

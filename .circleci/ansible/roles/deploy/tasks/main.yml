@@ -1,0 +1,4 @@
+---
+- name: "copy compiled files"
+  copy: src:/dist/
+    dest:/web
