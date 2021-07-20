@@ -1,4 +1,29 @@
 ---
-- name: "copy compiled files"
-  copy: src:/dist/
-    dest:/web
+- name: "Create directory"
+  file:
+    path: /home/ubuntu/backend
+    state: directory
+
+- name: "Copy files."
+  become: true
+  copy:
+    src: /root/project/backend
+    dest: /home/ubuntu
+
+- name: "Install dependencies"
+  become: true
+  command: npm install
+  args:
+    chdir: /home/ubuntu/backend
+
+- name: "build package"
+  become: true
+  command: npm run build
+  args:
+    chdir: /home/ubuntu/backend
+
+- name: "run server"
+  become: true
+  command: pm2 start npm -- run start
+  args:
+    chdir: /home/ubuntu/backend

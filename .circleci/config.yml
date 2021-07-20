@@ -226,15 +226,15 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
-            cd frontend
-            npm install -g npm
-            npm i
+            sudo apt-get -y -qq update
+            sudo apt-get -y -qq install python3
+            sudo apt-get -qq install awscli
       - run:
           name: Get backend url
           command: |
@@ -245,6 +245,7 @@ jobs:
           name: Deploy frontend objects
           command: |
             cd frontend
+            npm i
             npm run build
             cd dist
             aws s3 sync . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
@@ -266,11 +267,7 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            cd backend
-            npm install -g npm
-            npm i
-            npm run build
-            cd ~/.circleci/ansible
+            cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       # Here's where you will add some code to rollback on failure
 
