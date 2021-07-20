@@ -239,6 +239,7 @@ jobs:
           name: Get backend url
           command: |
             BACKEND_IP=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/backendip)
+            cd frontend
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
       - run:
@@ -265,6 +266,11 @@ jobs:
           command: |
             apk add --update ansible
             apk add openssh-client
+      - run:
+          name: Add key to known hosts
+          command: |
+            BACKEND_IP=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/backendip)
+            ssh-keyscan $BACKEND_IP >> ~/.ssh/known_hosts
       - run:
           name: Deploy backend
           command: |
