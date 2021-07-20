@@ -236,16 +236,12 @@ jobs:
             sudo apt-get -y -qq install python3
             sudo apt-get -qq install awscli
       - run:
-          name: Get backend url
+          name: Deploy frontend objects
           command: |
             BACKEND_IP=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/backendip)
             cd frontend
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-      - run:
-          name: Deploy frontend objects
-          command: |
-            cd frontend
             npm i
             npm run build
             cd dist
@@ -266,6 +262,7 @@ jobs:
           command: |
             apk add --update ansible
             apk add openssh-client
+            apk add curl
       - run:
           name: Add key to known hosts
           command: |
