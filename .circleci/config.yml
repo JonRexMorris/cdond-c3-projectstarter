@@ -161,7 +161,7 @@ jobs:
           name: Persist backend ip to memstash
           command: |
             BACKEND_IP=$(aws cloudformation list-exports \
-            --query "Exports[?Name==\$(udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}\)].Value" \
+            --query "Exports[?Name==\`udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}\`].Value" \
             --no-paginate \
             --output text)
             curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "$BACKEND_IP" https://api.memstash.io/values/backendip
