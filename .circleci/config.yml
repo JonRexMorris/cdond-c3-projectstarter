@@ -233,6 +233,7 @@ jobs:
           name: Install dependencies
           command: |
             cd frontend
+            npm install -g npm
             npm i
       - run:
           name: Get backend url
@@ -266,6 +267,7 @@ jobs:
           name: Deploy backend
           command: |
             cd backend
+            npm install -g npm
             npm i
             npm run build
             cd ~/.circleci/ansible
