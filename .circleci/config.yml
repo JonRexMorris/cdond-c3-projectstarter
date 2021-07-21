@@ -14,7 +14,6 @@ commands:
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
             aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
-            exit 1
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -30,7 +29,6 @@ commands:
               cd ~/project/backend
               npm install
               npm run migrations:revert
-              exit 1
             fi
 
 jobs:
@@ -294,15 +292,15 @@ jobs:
           name: Deploy backend
           no_output_timeout: 20m
           command: |
-            $TYPEORM_CONNECTION > "backend/.env"
-            $TYPEORM_HOST >> "backend/.env"
-            $TYPEORM_PORT >> "backend/.env"
-            $TYPEORM_USERNAME >> "backend/.env"
-            $TYPEORM_PASSWORD >> "backend/.env"
-            $TYPEORM_DATABASE >> "backend/.env"
-            $TYPEORM_MIGRATIONS >> "backend/.env"
-            $TYPEORM_MIGRATIONS_DIR >> "backend/.env"
-            $TYPEORM_ENTITIES >> "backend/.env"
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION > "backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> "backend/.env"
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> "backend/.env"
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - revert-migrations
