@@ -234,7 +234,8 @@ jobs:
           command: |
             sudo apt-get -y -qq update
             sudo apt-get -y -qq install python3
-            sudo apt-get -qq install awscli
+            sudo apt-get install python3.pip
+            pip3 install awscli --upgrade --user
       - run:
           name: Deploy frontend objects
           command: |
@@ -270,6 +271,7 @@ jobs:
             ssh-keyscan $BACKEND_IP >> ~/.ssh/known_hosts
       - run:
           name: Deploy backend
+          no_output_timeout: 20m
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
