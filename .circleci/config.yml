@@ -6,32 +6,30 @@ orbs:
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-    parameters:
-      # Add parameter here
     steps:
       - run:
           name: Destroy environments
           when: on_fail
           command: |
-            # Your code here
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
             exit 1
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
-    parameters:
-      # Add parameter here
     steps:
       - run:
           name: Revert migrations
-          # Add when this will run
+          when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
+            SUCCESS=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID:0:7})
             if(( $SUCCESS==1 )); 
             then
-            #  cd ~/project/backend
-            #  npm install
-            #  Add revert code here. You can find this in the Getting Started section.
+              cd ~/project/backend
+              npm install
+              npm run migrations:revert
               exit 1
             fi
 
@@ -169,7 +167,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure
+      - destroy-environment
 
   configure-infrastructure:
     docker:
@@ -194,18 +192,26 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
+            pip install awscli
       - run:
           name: Configure server
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
-      # Here's where you will add some code to rollback on failure
+      - destroy-environment
 
   run-migrations:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo apt-get -y -qq update
+            sudo apt-get -y -qq install python3
+            sudo apt-get install python3.pip
+            pip3 install awscli --upgrade --user
       - run:
           name: Run migrations
           command: |
@@ -222,7 +228,8 @@ jobs:
             else
               curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "0" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID:0:7}
             fi
-      # Here's where you will add some code to rollback on failure
+      - revert-migrations
+      - destroy-environment
 
   deploy-frontend:
     docker:
@@ -247,7 +254,8 @@ jobs:
             npm run build
             cd dist
             aws s3 sync . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
-      # Here's where you will add some code to rollback on failure
+      - revert-migrations
+      - destroy-environment
 
   deploy-backend:
     docker:
@@ -264,6 +272,9 @@ jobs:
             apk add --update ansible
             apk add openssh-client
             apk add curl
+            apk add nodejs 
+            apk add npm
+            pip install awscli
       - run:
           name: Add key to known hosts
           command: |
@@ -275,7 +286,8 @@ jobs:
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # Here's where you will add some code to rollback on failure
+      - revert-migrations
+      - destroy-environment
 
   smoke-test:
     docker:
@@ -286,6 +298,9 @@ jobs:
           name: Install dependencies
           command: |
             apk add curl
+            apk add nodejs 
+            apk add npm
+            pip install awscli
       - run:
           name: Backend smoke test.
           command: |

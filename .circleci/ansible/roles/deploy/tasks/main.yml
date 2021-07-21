@@ -12,7 +12,10 @@
 
 - name: "Install dependencies"
   become: true
-  command: npm install
+  command: |
+    apt install node-typescript -y
+    npm install
+    npm install -g ts-node
   args:
     chdir: /home/ubuntu/backend
 
