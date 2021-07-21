@@ -294,6 +294,15 @@ jobs:
           name: Deploy backend
           no_output_timeout: 20m
           command: |
+            $TYPEORM_CONNECTION > "backend/.env"
+            $TYPEORM_HOST >> "backend/.env"
+            $TYPEORM_PORT >> "backend/.env"
+            $TYPEORM_USERNAME >> "backend/.env"
+            $TYPEORM_PASSWORD >> "backend/.env"
+            $TYPEORM_DATABASE >> "backend/.env"
+            $TYPEORM_MIGRATIONS >> "backend/.env"
+            $TYPEORM_MIGRATIONS_DIR >> "backend/.env"
+            $TYPEORM_ENTITIES >> "backend/.env"
             cd .circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - revert-migrations
