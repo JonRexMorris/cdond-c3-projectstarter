@@ -323,7 +323,7 @@ jobs:
           command: |
             BACKEND_IP=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/backendip)
             echo $BACKEND_IP
-            curl "https://${BACKEND_IP}:3030/api/status"
+            curl -s http://${BACKEND_IP}:3030/api/status
       #- run:
       #    name: Frontend smoke test.
       #    command: |
