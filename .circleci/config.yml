@@ -134,18 +134,18 @@ jobs:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/files/backend.yml \
-              --tags project=udapeople \
-              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
-      #- run:
-      #    name: Ensure front-end infrastructure exist
-      #    command: |
-      #      aws cloudformation deploy \
-      #        --template-file .circleci/files/frontend.yml \
-      #        --tags project=udapeople \
-      #        --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-      #        --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+            --template-file .circleci/files/backend.yml \
+            --tags project=udapeople \
+            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/frontend.yml \
+            --tags project=udapeople \
+            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Add back-end ip to ansible inventory
           command: |
@@ -324,18 +324,65 @@ jobs:
             BACKEND_IP=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/backendip)
             echo $BACKEND_IP
             curl -s http://${BACKEND_IP}:3030/api/status
-      #- run:
-      #    name: Frontend smoke test.
-      #    command: |
-      #      URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-2.amazonaws.com"
-      #      if curl -s ${URL} | grep "Welcome"
-      #      then
-      #        return 1
-      #      else
-      #        return 1
-      #      fi
-      #- revert-migrations
-      #- destroy-environment
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-2.amazonaws.com"
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 1
+            else
+              return 0
+            fi
+      - revert-migrations
+      - destroy-environment
+
+  cloudfront-update:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Get old workflow ID
+          command: |
+            WorkflowID=$(aws cloudformation \
+            list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+            --no-paginate \
+            --output text)
+            curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "$WorkflowID" https://api.memstash.io/values/WorkflowID
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name udapeople-cloudfront \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations
+      - destroy-environment
+
+  cleanup:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get -y -qq update
+            sudo apt-get -y -qq install python3
+            sudo apt-get install python3.pip
+            pip3 install awscli --upgrade --user
+      - run:
+          name: Remove old stacks and files
+          command: |
+            OldWorkflowID=$(curl -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request GET https://api.memstash.io/values/WorkflowID)
+            echo $OldWorkflowID
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
+              aws s3 rm s3://udapeople-${OldWorkflowID} --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            fi
 
 workflows:
   default:
@@ -355,13 +402,15 @@ workflows:
       #          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      #- run-migrations:
-      #    requires: [configure-infrastructure]
-      #- deploy-frontend:
-      #    requires: [run-migrations]
-      - deploy-backend:
-          #    requires: [run-migrations]
+      - run-migrations:
           requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
       - smoke-test:
-          #    requires: [deploy-backend, deploy-frontend]
-          requires: [deploy-backend]
+          requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
