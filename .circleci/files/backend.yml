@@ -21,6 +21,10 @@ Resources:
           FromPort: 3030
           ToPort: 3030
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9100
+          ToPort: 9100
+          CidrIp: 0.0.0.0/0
 
   EC2Instance:
     Type: AWS::EC2::Instance
@@ -29,7 +33,7 @@ Resources:
       SecurityGroups:
         - Ref: InstanceSecurityGroup
       KeyName: udacity
-      ImageId: ami-03d5c68bab01f3496 
+      ImageId: ami-03d5c68bab01f3496
       Tags:
         - Key: Name
           Value: !Sub backend-${ID}
@@ -37,6 +41,6 @@ Resources:
 Outputs:
   BackendURL:
     Description: The hostname of the Backend EC2 instance
-    Value: !GetAtt EC2Instance.PublicIp       
+    Value: !GetAtt EC2Instance.PublicIp
     Export:
       Name: !Sub udapeople-backend-${ID}
