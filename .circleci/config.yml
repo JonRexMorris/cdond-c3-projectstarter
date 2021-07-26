@@ -234,6 +234,8 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [frontend-build]
       - run:
           name: Install dependencies
           command: |
@@ -270,6 +272,8 @@ jobs:
           TYPEORM_ENTITIES: $TYPEORM_ENTITIES
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
       - add_ssh_keys:
           fingerprints: ["d6:1b:b8:58:ee:ff:9d:d6:ab:17:a5:3b:d3:21:a3:93"]
       - attach_workspace:
@@ -352,6 +356,7 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: 71178fb8-cbf8-4418-ac22-fe13c885ac3d" --request PUT --data "$WorkflowID" https://api.memstash.io/values/WorkflowID
       - run:
           name: Update cloudfront distribution
+          no_output_timeout: 15m
           command: |
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
